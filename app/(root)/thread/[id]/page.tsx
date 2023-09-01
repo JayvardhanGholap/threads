@@ -1,62 +1,49 @@
-import ThreadCard from "@/components/cards/ThreadCard";
-import Comment from "@/components/forms/Comment";
-import { fetchThreadById } from "@/lib/actions/thread.actions";
-import { fetchUser } from "@/lib/actions/user.actions";
-import { currentUser } from '@clerk/nextjs';
-import { redirect } from "next/navigation";
+import React from "react";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
+import { dark } from "@clerk/themes";
 
+import "../globals.css";
+import LeftSidebar from "@/components/shared/LeftSidebar";
+import Bottombar from "@/components/shared/Bottombar";
+import RightSidebar from "@/components/shared/RightSidebar";
+import Topbar from "@/components/shared/Topbar";
 
-const Page = async ({ params }: { params: { id: string } }) => {
-    if (!params.id) return null;
+const inter = Inter({ subsets: ["latin"] });
 
-    const user = await currentUser();
-    if (!user) return null;
+export const metadata: Metadata = {
+    title: "Threads",
+    description: "A Next.js 13 Meta Threads application",
+};
 
-    const userInfo = await fetchUser(user.id);
-    if (!userInfo?.onboarded) redirect('/onboarding');
-
-    const thread = await fetchThreadById(params.id);
-
+export default function RootLayout({
+    children,
+}: {
+    children: React.ReactNode;
+}) {
     return (
-        <section className="relative">
-            <div>
-                <ThreadCard
-                    key={thread._id}
-                    id={thread._id}
-                    currentUserId={user?.id || ""}
-                    parentId={thread.parentId}
-                    content={thread.text}
-                    author={thread.author}
-                    community={thread.community}
-                    createdAt={thread.createdAt}
-                    comments={thread.children}
-                />
-            </div>
-            <div className="mt-7">
-                <Comment
-                    threadId={thread.id}
-                    currentUserImg={userInfo.image}
-                    currentUserId={JSON.stringify(userInfo._id)}
-                />
-            </div>
-            <div className="mt-10">
-                {thread.children.map((childItem: any) => (
-                    <ThreadCard
-                        key={childItem._id}
-                        id={childItem._id}
-                        currentUserId={childItem?.id || ""}
-                        parentId={childItem.parentId}
-                        content={childItem.text}
-                        author={childItem.author}
-                        community={childItem.community}
-                        createdAt={childItem.createdAt}
-                        comments={childItem.children}
-                        isComment
-                    />
-                ))}
-            </div>
-        </section>
-    )
-}
+        <ClerkProvider
+            appearance={{
+                baseTheme: dark,
+            }}
+        >
+            <html lang='en'>
+                <body className={inter.className}>
+                    <Topbar />
 
-export default Page;
+                    <main className='flex flex-row'>
+                        <LeftSidebar />
+                        <section className='main-container'>
+                            <div className='w-full max-w-4xl'>{children}</div>
+                        </section>
+                        {/* @ts-ignore */}
+                        <RightSidebar />
+                    </main>
+
+                    <Bottombar />
+                </body>
+            </html>
+        </ClerkProvider>
+    );
+}
